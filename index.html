@@ -1,0 +1,2815 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
+<meta
+  name="referrer"
+  content="strict-origin-when-cross-origin"
+>
+
+<title>NexaMap — Карта мира</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  background: #0f172a;
+}
+
+body {
+  color: #0f172a;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+#map {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+
+.topbar {
+  position: fixed;
+
+  top: 16px;
+  left: 16px;
+  right: 16px;
+
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  pointer-events: none;
+}
+
+.brand {
+  min-width: 190px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 9px 13px;
+
+  border-radius: 15px;
+
+  background: rgba(255,255,255,.95);
+
+  box-shadow:
+    0 10px 35px rgba(0,0,0,.17);
+
+  backdrop-filter: blur(15px);
+
+  pointer-events: auto;
+}
+
+.logo {
+  width: 37px;
+  height: 37px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  color: white;
+  font-size: 19px;
+  font-weight: 900;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #06b6d4
+    );
+
+  box-shadow:
+    0 6px 18px rgba(37,99,235,.35);
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.brand-subtitle {
+  margin-top: 1px;
+
+  color: #64748b;
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+.search {
+  position: relative;
+
+  width: min(650px, 100%);
+
+  pointer-events: auto;
+}
+
+#searchInput {
+  width: 100%;
+  height: 52px;
+
+  padding:
+    0 54px
+    0 49px;
+
+  border: 0;
+  outline: none;
+
+  border-radius: 16px;
+
+  background:
+    rgba(255,255,255,.97);
+
+  color: #0f172a;
+
+  font-size: 15px;
+
+  box-shadow:
+    0 10px 35px rgba(0,0,0,.18);
+
+  backdrop-filter: blur(15px);
+}
+
+#searchInput::placeholder {
+  color: #94a3b8;
+}
+
+.search-icon {
+  position: absolute;
+
+  left: 17px;
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  color: #64748b;
+
+  font-size: 21px;
+
+  pointer-events: none;
+}
+
+#searchButton {
+  position: absolute;
+
+  right: 7px;
+  top: 7px;
+
+  width: 38px;
+  height: 38px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: #2563eb;
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 17px;
+
+  transition:
+    .15s ease;
+}
+
+#searchButton:hover {
+  background: #1d4ed8;
+
+  transform:
+    scale(1.04);
+}
+
+#searchButton:active {
+  transform:
+    scale(.96);
+}
+
+.search-results {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  top: 59px;
+
+  display: none;
+
+  max-height: 420px;
+
+  overflow-y: auto;
+
+  padding: 6px;
+
+  border-radius: 15px;
+
+  background:
+    rgba(255,255,255,.98);
+
+  box-shadow:
+    0 15px 45px rgba(0,0,0,.22);
+
+  backdrop-filter:
+    blur(18px);
+}
+
+.search-results.visible {
+  display: block;
+}
+
+.search-loading {
+  padding: 16px;
+
+  color: #64748b;
+
+  font-size: 13px;
+
+  text-align: center;
+}
+
+.search-empty {
+  padding: 18px;
+
+  color: #64748b;
+
+  font-size: 13px;
+
+  text-align: center;
+}
+
+.result {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 11px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: transparent;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background .12s;
+}
+
+.result:hover {
+  background: #eff6ff;
+}
+
+.result-icon {
+  flex: 0 0 auto;
+
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: #dbeafe;
+
+  color: #2563eb;
+}
+
+.result-content {
+  min-width: 0;
+}
+
+.result-name {
+  color: #111827;
+
+  font-size: 14px;
+  font-weight: 750;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-address {
+  margin-top: 3px;
+
+  color: #64748b;
+
+  font-size: 11px;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   SIDE PANEL
+   ========================================================= */
+
+.side-panel {
+  position: fixed;
+
+  top: 86px;
+  left: 16px;
+
+  width: 285px;
+
+  z-index: 1000;
+
+  overflow: hidden;
+
+  border-radius: 16px;
+
+  background:
+    rgba(255,255,255,.95);
+
+  box-shadow:
+    0 12px 40px rgba(0,0,0,.18);
+
+  backdrop-filter:
+    blur(15px);
+}
+
+.panel-section {
+  padding: 14px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+.panel-section:last-child {
+  border-bottom: 0;
+}
+
+.panel-title {
+  margin-bottom: 10px;
+
+  color: #334155;
+
+  font-size: 11px;
+  font-weight: 850;
+
+  text-transform: uppercase;
+
+  letter-spacing: .7px;
+}
+
+.quick-buttons {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 8px;
+}
+
+.quick-button {
+  min-height: 41px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  padding: 7px;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  color: #334155;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  transition:
+    .15s ease;
+}
+
+.quick-button:hover {
+  background: #eff6ff;
+
+  border-color:
+    #bfdbfe;
+
+  transform:
+    translateY(-1px);
+}
+
+.quick-button.active {
+  color: white;
+
+  background: #2563eb;
+
+  border-color: #2563eb;
+}
+
+.layer-row {
+  min-height: 33px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color: #334155;
+
+  font-size: 13px;
+}
+
+.switch {
+  position: relative;
+
+  width: 40px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+
+  inset: 0;
+
+  border-radius: 20px;
+
+  background: #cbd5e1;
+
+  cursor: pointer;
+
+  transition: .2s;
+}
+
+.slider::before {
+  content: "";
+
+  position: absolute;
+
+  width: 16px;
+  height: 16px;
+
+  left: 3px;
+  top: 3px;
+
+  border-radius: 50%;
+
+  background: white;
+
+  box-shadow:
+    0 1px 5px rgba(0,0,0,.25);
+
+  transition: .2s;
+}
+
+.switch input:checked + .slider {
+  background: #2563eb;
+}
+
+.switch input:checked + .slider::before {
+  transform:
+    translateX(18px);
+}
+
+/* =========================================================
+   FLOATING BUTTONS
+   ========================================================= */
+
+.location-button,
+.walk-button {
+  position: fixed;
+
+  right: 17px;
+
+  z-index: 1000;
+
+  width: 48px;
+  height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+
+  border-radius: 14px;
+
+  background:
+    rgba(255,255,255,.96);
+
+  color: #334155;
+
+  box-shadow:
+    0 8px 28px rgba(0,0,0,.18);
+
+  cursor: pointer;
+
+  font-size: 20px;
+
+  transition:
+    .15s ease;
+}
+
+.location-button {
+  bottom: 78px;
+}
+
+.walk-button {
+  bottom: 134px;
+}
+
+.location-button:hover,
+.walk-button:hover {
+  transform:
+    scale(1.05);
+
+  background: white;
+}
+
+.location-button:active,
+.walk-button:active {
+  transform:
+    scale(.96);
+}
+
+/* =========================================================
+   INFO
+   ========================================================= */
+
+.coordinates {
+  position: fixed;
+
+  left: 16px;
+  bottom: 16px;
+
+  z-index: 1000;
+
+  padding: 9px 13px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255,255,255,.94);
+
+  color: #475569;
+
+  font-size: 12px;
+
+  box-shadow:
+    0 6px 25px rgba(0,0,0,.15);
+
+  backdrop-filter:
+    blur(10px);
+}
+
+.status {
+  position: fixed;
+
+  right: 17px;
+  bottom: 17px;
+
+  z-index: 1000;
+
+  padding: 9px 13px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255,255,255,.94);
+
+  color: #475569;
+
+  font-size: 12px;
+
+  box-shadow:
+    0 6px 25px rgba(0,0,0,.15);
+}
+
+.status-dot {
+  display: inline-block;
+
+  width: 7px;
+  height: 7px;
+
+  margin-right: 6px;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+}
+
+/* =========================================================
+   PLACE CARD
+   ========================================================= */
+
+.place-card {
+  position: fixed;
+
+  right: 18px;
+  top: 86px;
+
+  z-index: 1000;
+
+  width: 300px;
+
+  display: none;
+
+  padding: 16px;
+
+  border-radius: 16px;
+
+  background:
+    rgba(255,255,255,.97);
+
+  box-shadow:
+    0 15px 45px rgba(0,0,0,.2);
+
+  backdrop-filter:
+    blur(16px);
+}
+
+.place-card.visible {
+  display: block;
+}
+
+.place-close {
+  float: right;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #94a3b8;
+
+  cursor: pointer;
+
+  font-size: 20px;
+}
+
+.place-title {
+  margin-right: 25px;
+
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.place-address {
+  margin-top: 7px;
+
+  color: #64748b;
+
+  font-size: 12px;
+
+  line-height: 1.45;
+}
+
+.place-actions {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 8px;
+
+  margin-top: 13px;
+}
+
+.place-action {
+  min-height: 39px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: #eff6ff;
+
+  color: #2563eb;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.place-action:hover {
+  background: #dbeafe;
+}
+
+/* =========================================================
+   WALK MODE
+   ========================================================= */
+
+.walk-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 900;
+
+  display: none;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(15,23,42,.48),
+      transparent 22%,
+      transparent 70%,
+      rgba(15,23,42,.45)
+    );
+}
+
+.walk-overlay.visible {
+  display: block;
+}
+
+.walk-banner {
+  position: fixed;
+
+  left: 50%;
+  top: 92px;
+
+  transform:
+    translateX(-50%);
+
+  z-index: 1200;
+
+  display: none;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px 15px;
+
+  border-radius: 13px;
+
+  background:
+    rgba(15,23,42,.9);
+
+  color: white;
+
+  box-shadow:
+    0 10px 35px rgba(0,0,0,.25);
+
+  font-size: 13px;
+}
+
+.walk-banner.visible {
+  display: flex;
+}
+
+.exit-walk {
+  border: 0;
+
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  background: #ef4444;
+
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 11px;
+  font-weight: 750;
+}
+
+/* =========================================================
+   LEAFLET
+   ========================================================= */
+
+.leaflet-control-zoom {
+  border: 0 !important;
+
+  box-shadow:
+    0 7px 25px rgba(0,0,0,.16) !important;
+}
+
+.leaflet-control-zoom a {
+  width: 40px !important;
+  height: 40px !important;
+
+  line-height: 40px !important;
+
+  border: 0 !important;
+
+  color: #334155 !important;
+}
+
+/*
+ * Убираем именно бренд Leaflet.
+ *
+ * Атрибуция OpenStreetMap остаётся,
+ * потому что её нельзя просто скрывать.
+ */
+
+.leaflet-control-attribution {
+  background:
+    rgba(255,255,255,.82) !important;
+
+  border-radius:
+    8px 0 0 0;
+
+  padding: 3px 7px !important;
+
+  font-size: 10px !important;
+}
+
+/* =========================================================
+   MARKER
+   ========================================================= */
+
+.nexa-marker {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border:
+    3px solid white;
+
+  border-radius:
+    50% 50% 50% 0;
+
+  background:
+    #2563eb;
+
+  color: white;
+
+  box-shadow:
+    0 5px 15px rgba(0,0,0,.3);
+
+  transform:
+    rotate(-45deg);
+}
+
+.nexa-marker span {
+  transform:
+    rotate(45deg);
+}
+
+/* =========================================================
+   POPUP
+   ========================================================= */
+
+.popup {
+  min-width: 210px;
+}
+
+.popup h3 {
+  margin:
+    0 0 6px;
+
+  color: #111827;
+
+  font-size: 16px;
+}
+
+.popup p {
+  margin:
+    4px 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.popup-button {
+  width: 100%;
+
+  margin-top: 9px;
+
+  padding: 9px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background:
+    #2563eb;
+
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 850px) {
+
+  .topbar {
+    top: 9px;
+    left: 9px;
+    right: 9px;
+  }
+
+  .brand {
+    min-width: auto;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .side-panel {
+    left: 9px;
+    right: 9px;
+    bottom: 64px;
+    top: auto;
+
+    width: auto;
+
+    max-height: 190px;
+
+    overflow-y: auto;
+  }
+
+  .coordinates {
+    left: 9px;
+    bottom: 9px;
+  }
+
+  .status {
+    display: none;
+  }
+
+  .place-card {
+    top: 70px;
+    left: 9px;
+    right: 9px;
+
+    width: auto;
+  }
+
+  .walk-banner {
+    top: 67px;
+
+    max-width:
+      calc(100% - 20px);
+
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .brand {
+    padding: 7px 9px;
+  }
+
+  .logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-title {
+    font-size: 14px;
+  }
+
+  #searchInput {
+    height: 46px;
+
+    font-size: 13px;
+  }
+
+  .search-results {
+    top: 52px;
+  }
+
+  .side-panel {
+    max-height: 160px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- ========================================================
+     TOP BAR
+     ======================================================== -->
+
+<header class="topbar">
+
+  <div class="brand">
+
+    <div class="logo">
+      N
+    </div>
+
+    <div>
+
+      <div class="brand-title">
+        NexaMap
+      </div>
+
+      <div class="brand-subtitle">
+        Интерактивная карта мира
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="search">
+
+    <span class="search-icon">
+      ⌕
+    </span>
+
+    <input
+      id="searchInput"
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Найти город, адрес, здание, достопримечательность..."
+      aria-label="Поиск места"
+    >
+
+    <button
+      id="searchButton"
+      type="button"
+      aria-label="Поиск"
+    >
+      ↵
+    </button>
+
+    <div
+      id="searchResults"
+      class="search-results"
+    ></div>
+
+  </div>
+
+</header>
+
+<!-- ========================================================
+     SIDE PANEL
+     ======================================================== -->
+
+<aside class="side-panel">
+
+  <section class="panel-section">
+
+    <div class="panel-title">
+      Популярные места
+    </div>
+
+    <div class="quick-buttons">
+
+      <button
+        class="quick-button"
+        data-place="Москва"
+      >
+        🇷🇺 Москва
+      </button>
+
+      <button
+        class="quick-button"
+        data-place="Берлин"
+      >
+        🇩🇪 Берлин
+      </button>
+
+      <button
+        class="quick-button"
+        data-place="Лондон"
+      >
+        🇬🇧 Лондон
+      </button>
+
+      <button
+        class="quick-button"
+        data-place="Нью-Йорк"
+      >
+        🇺🇸 Нью-Йорк
+      </button>
+
+      <button
+        class="quick-button"
+        data-place="Токио"
+      >
+        🇯🇵 Токио
+      </button>
+
+      <button
+        class="quick-button"
+        data-place="Сидней"
+      >
+        🇦🇺 Сидней
+      </button>
+
+    </div>
+
+  </section>
+
+  <section class="panel-section">
+
+    <div class="panel-title">
+      Карта
+    </div>
+
+    <div class="layer-row">
+
+      <span>
+        Стандартная
+      </span>
+
+      <label class="switch">
+
+        <input
+          id="standardLayer"
+          type="checkbox"
+          checked
+        >
+
+        <span class="slider"></span>
+
+      </label>
+
+    </div>
+
+    <div class="layer-row">
+
+      <span>
+        Спутник
+      </span>
+
+      <label class="switch">
+
+        <input
+          id="satelliteLayer"
+          type="checkbox"
+        >
+
+        <span class="slider"></span>
+
+      </label>
+
+    </div>
+
+    <div class="layer-row">
+
+      <span>
+        Рельеф
+      </span>
+
+      <label class="switch">
+
+        <input
+          id="terrainLayer"
+          type="checkbox"
+        >
+
+        <span class="slider"></span>
+
+      </label>
+
+    </div>
+
+  </section>
+
+</aside>
+
+<!-- ========================================================
+     PLACE CARD
+     ======================================================== -->
+
+<section
+  id="placeCard"
+  class="place-card"
+>
+
+  <button
+    id="placeClose"
+    class="place-close"
+  >
+    ×
+  </button>
+
+  <div
+    id="placeTitle"
+    class="place-title"
+  >
+    Место
+  </div>
+
+  <div
+    id="placeAddress"
+    class="place-address"
+  ></div>
+
+  <div class="place-actions">
+
+    <button
+      id="placeZoom"
+      class="place-action"
+    >
+      🔎 Приблизить
+    </button>
+
+    <button
+      id="placeWalk"
+      class="place-action"
+    >
+      🚶 Прогулка
+    </button>
+
+  </div>
+
+</section>
+
+<!-- ========================================================
+     FLOATING BUTTONS
+     ======================================================== -->
+
+<button
+  id="walkButton"
+  class="walk-button"
+  title="Режим прогулки"
+  aria-label="Режим прогулки"
+>
+  🚶
+</button>
+
+<button
+  id="locationButton"
+  class="location-button"
+  title="Моё местоположение"
+  aria-label="Моё местоположение"
+>
+  ◎
+</button>
+
+<!-- ========================================================
+     WALK MODE
+     ======================================================== -->
+
+<div
+  id="walkOverlay"
+  class="walk-overlay"
+></div>
+
+<div
+  id="walkBanner"
+  class="walk-banner"
+>
+
+  <span>
+    🚶 Режим прогулки включён
+  </span>
+
+  <button
+    id="exitWalk"
+    class="exit-walk"
+  >
+    Выйти
+  </button>
+
+</div>
+
+<!-- ========================================================
+     BOTTOM INFO
+     ======================================================== -->
+
+<div
+  id="coordinates"
+  class="coordinates"
+>
+  Координаты: —, —
+</div>
+
+<div class="status">
+  <span class="status-dot"></span>
+  NexaMap работает
+</div>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+<script>
+"use strict";
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+
+const NOMINATIM_URL =
+  "https://nominatim.openstreetmap.org/search";
+
+const DEFAULT_VIEW = {
+  lat: 25,
+  lng: 10,
+  zoom: 3
+};
+
+/*
+ * Nominatim запрещает autocomplete.
+ *
+ * Поэтому запрос отправляется только:
+ * 1. по Enter;
+ * 2. по кнопке поиска;
+ * 3. по кнопкам популярных мест.
+ *
+ * Между запросами также выдерживается пауза.
+ */
+
+const SEARCH_DELAY = 1100;
+
+let lastSearchTime = 0;
+
+/* ============================================================
+   MAP
+   ============================================================ */
+
+const map = L.map("map", {
+  center: [
+    DEFAULT_VIEW.lat,
+    DEFAULT_VIEW.lng
+  ],
+
+  zoom:
+    DEFAULT_VIEW.zoom,
+
+  minZoom: 2,
+
+  maxZoom: 19,
+
+  zoomControl: true,
+
+  worldCopyJump: true
+});
+
+/*
+ * OpenStreetMap
+ *
+ * Атрибуция OSM оставлена.
+ * Префикс Leaflet отключён.
+ */
+
+const standardLayer =
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 19,
+
+      referrerPolicy:
+        "strict-origin-when-cross-origin",
+
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+    }
+  );
+
+const satelliteLayer =
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+      maxZoom: 19,
+
+      attribution:
+        "Tiles &copy; Esri"
+    }
+  );
+
+const terrainLayer =
+  L.tileLayer(
+    "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 17,
+
+      attribution:
+        'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap'
+    }
+  );
+
+standardLayer.addTo(map);
+
+/*
+ * Убираем только надпись Leaflet.
+ * Авторство данных остаётся.
+ */
+
+map.attributionControl.setPrefix(false);
+
+const markerLayer =
+  L.layerGroup().addTo(map);
+
+/* ============================================================
+   MARKER ICON
+   ============================================================ */
+
+const markerIcon =
+  L.divIcon({
+    className: "",
+
+    html:
+      `
+        <div class="nexa-marker">
+          <span>●</span>
+        </div>
+      `,
+
+    iconSize: [
+      34,
+      34
+    ],
+
+    iconAnchor: [
+      17,
+      34
+    ],
+
+    popupAnchor: [
+      0,
+      -34
+    ]
+  });
+
+let selectedPlace = null;
+
+let selectedMarker = null;
+
+let currentLocationMarker = null;
+
+/* ============================================================
+   DOM
+   ============================================================ */
+
+const searchInput =
+  document.getElementById(
+    "searchInput"
+  );
+
+const searchButton =
+  document.getElementById(
+    "searchButton"
+  );
+
+const searchResults =
+  document.getElementById(
+    "searchResults"
+  );
+
+const placeCard =
+  document.getElementById(
+    "placeCard"
+  );
+
+const placeTitle =
+  document.getElementById(
+    "placeTitle"
+  );
+
+const placeAddress =
+  document.getElementById(
+    "placeAddress"
+  );
+
+const placeClose =
+  document.getElementById(
+    "placeClose"
+  );
+
+const placeZoom =
+  document.getElementById(
+    "placeZoom"
+  );
+
+const placeWalk =
+  document.getElementById(
+    "placeWalk"
+  );
+
+const walkButton =
+  document.getElementById(
+    "walkButton"
+  );
+
+const walkOverlay =
+  document.getElementById(
+    "walkOverlay"
+  );
+
+const walkBanner =
+  document.getElementById(
+    "walkBanner"
+  );
+
+const exitWalk =
+  document.getElementById(
+    "exitWalk"
+  );
+
+const coordinates =
+  document.getElementById(
+    "coordinates"
+  );
+
+const locationButton =
+  document.getElementById(
+    "locationButton"
+  );
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+}
+
+function formatCoordinates(
+  lat,
+  lng
+) {
+  return (
+    `${Number(lat).toFixed(5)}, ` +
+    `${Number(lng).toFixed(5)}`
+  );
+}
+
+function getZoomForPlace(
+  result
+) {
+  const type =
+    String(
+      result.type || ""
+    ).toLowerCase();
+
+  const category =
+    String(
+      result.category || ""
+    ).toLowerCase();
+
+  if (
+    [
+      "building",
+      "house",
+      "shop",
+      "cafe",
+      "restaurant",
+      "museum",
+      "hotel",
+      "attraction"
+    ].includes(type)
+  ) {
+    return 17;
+  }
+
+  if (
+    category.includes(
+      "amenity"
+    )
+  ) {
+    return 17;
+  }
+
+  if (
+    [
+      "city",
+      "town"
+    ].includes(type)
+  ) {
+    return 11;
+  }
+
+  if (
+    type === "village"
+  ) {
+    return 13;
+  }
+
+  if (
+    type === "country"
+  ) {
+    return 5;
+  }
+
+  return 15;
+}
+
+/* ============================================================
+   SEARCH RATE LIMIT
+   ============================================================ */
+
+async function waitForSearchSlot() {
+
+  const now =
+    Date.now();
+
+  const elapsed =
+    now - lastSearchTime;
+
+  if (
+    elapsed < SEARCH_DELAY
+  ) {
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          SEARCH_DELAY - elapsed
+        )
+    );
+  }
+
+  lastSearchTime =
+    Date.now();
+}
+
+/* ============================================================
+   REAL WORLD SEARCH
+   ============================================================ */
+
+async function searchWorld(
+  query
+) {
+
+  const cleanQuery =
+    query.trim();
+
+  if (
+    !cleanQuery
+  ) {
+    return [];
+  }
+
+  await waitForSearchSlot();
+
+  const params =
+    new URLSearchParams({
+      q: cleanQuery,
+
+      format: "jsonv2",
+
+      addressdetails:
+        "1",
+
+      limit: "8",
+
+      "accept-language":
+        "ru,en"
+    });
+
+  const response =
+    await fetch(
+      `${NOMINATIM_URL}?${params.toString()}`,
+      {
+        method: "GET",
+
+        headers: {
+          "Accept":
+            "application/json"
+        }
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
+    throw new Error(
+      `Search HTTP ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+
+/* ============================================================
+   SEARCH UI
+   ============================================================ */
+
+function showSearchLoading() {
+
+  searchResults.innerHTML =
+    `
+      <div class="search-loading">
+        🔎 Ищу по всему миру…
+      </div>
+    `;
+
+  searchResults.classList.add(
+    "visible"
+  );
+}
+
+function showSearchError() {
+
+  searchResults.innerHTML =
+    `
+      <div class="search-empty">
+        Не удалось выполнить поиск.
+        <br><br>
+        Проверь интернет-соединение
+        и попробуй ещё раз.
+      </div>
+    `;
+
+  searchResults.classList.add(
+    "visible"
+  );
+}
+
+function showSearchEmpty() {
+
+  searchResults.innerHTML =
+    `
+      <div class="search-empty">
+        Ничего не найдено.
+        <br>
+        Попробуй другой запрос.
+      </div>
+    `;
+
+  searchResults.classList.add(
+    "visible"
+  );
+}
+
+function renderResults(
+  results
+) {
+
+  searchResults.innerHTML = "";
+
+  if (
+    !results.length
+  ) {
+    showSearchEmpty();
+
+    return;
+  }
+
+  results.forEach(
+    (result, index) => {
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type =
+        "button";
+
+      button.className =
+        "result";
+
+      const displayName =
+        result.name ||
+        result.display_name
+          .split(",")[0];
+
+      const address =
+        result.display_name ||
+        "";
+
+      button.innerHTML =
+        `
+          <div class="result-icon">
+            ${index === 0 ? "📍" : "📌"}
+          </div>
+
+          <div class="result-content">
+
+            <div class="result-name">
+              ${escapeHTML(
+                displayName
+              )}
+            </div>
+
+            <div class="result-address">
+              ${escapeHTML(
+                address
+              )}
+            </div>
+
+          </div>
+        `;
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          selectSearchResult(
+            result
+          );
+
+        }
+      );
+
+      searchResults.appendChild(
+        button
+      );
+    }
+  );
+
+  searchResults.classList.add(
+    "visible"
+  );
+}
+
+/* ============================================================
+   SELECT SEARCH RESULT
+   ============================================================ */
+
+function selectSearchResult(
+  result
+) {
+
+  const lat =
+    Number(result.lat);
+
+  const lng =
+    Number(result.lon);
+
+  const zoom =
+    getZoomForPlace(
+      result
+    );
+
+  selectedPlace = {
+    lat,
+    lng,
+    zoom,
+
+    name:
+      result.name ||
+      result.display_name
+        .split(",")[0],
+
+    address:
+      result.display_name,
+
+    raw:
+      result
+  };
+
+  searchInput.value =
+    selectedPlace.name;
+
+  searchResults.classList.remove(
+    "visible"
+  );
+
+  openPlace(
+    selectedPlace
+  );
+}
+
+/* ============================================================
+   OPEN PLACE
+   ============================================================ */
+
+function openPlace(
+  place
+) {
+
+  selectedPlace =
+    place;
+
+  if (
+    selectedMarker
+  ) {
+    markerLayer.removeLayer(
+      selectedMarker
+    );
+
+    selectedMarker =
+      null;
+  }
+
+  selectedMarker =
+    L.marker(
+      [
+        place.lat,
+        place.lng
+      ],
+      {
+        icon:
+          markerIcon
+      }
+    ).addTo(
+      markerLayer
+    );
+
+  const popupHTML =
+    `
+      <div class="popup">
+
+        <h3>
+          ${escapeHTML(
+            place.name
+          )}
+        </h3>
+
+        <p>
+          📍
+          ${formatCoordinates(
+            place.lat,
+            place.lng
+          )}
+        </p>
+
+        <p>
+          ${escapeHTML(
+            place.address || ""
+          )}
+        </p>
+
+        <button
+          class="popup-button"
+          onclick="window.nexaStartWalk()"
+        >
+          🚶 Начать прогулку
+        </button>
+
+      </div>
+    `;
+
+  selectedMarker.bindPopup(
+    popupHTML
+  );
+
+  map.flyTo(
+    [
+      place.lat,
+      place.lng
+    ],
+    place.zoom || 15,
+    {
+      duration:
+        1.5
+    }
+  );
+
+  setTimeout(
+    () => {
+      selectedMarker.openPopup();
+    },
+    700
+  );
+
+  placeTitle.textContent =
+    place.name;
+
+  placeAddress.textContent =
+    place.address || "";
+
+  placeCard.classList.add(
+    "visible"
+  );
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+
+async function performSearch() {
+
+  const query =
+    searchInput.value.trim();
+
+  if (
+    !query
+  ) {
+    searchInput.focus();
+
+    return;
+  }
+
+  showSearchLoading();
+
+  searchButton.disabled =
+    true;
+
+  try {
+
+    const results =
+      await searchWorld(
+        query
+      );
+
+    renderResults(
+      results
+    );
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      "NexaMap search error:",
+      error
+    );
+
+    showSearchError();
+
+  } finally {
+
+    searchButton.disabled =
+      false;
+  }
+}
+
+searchButton.addEventListener(
+  "click",
+  performSearch
+);
+
+searchInput.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Enter"
+    ) {
+
+      event.preventDefault();
+
+      performSearch();
+    }
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      searchResults.classList.remove(
+        "visible"
+      );
+
+      searchInput.blur();
+    }
+  }
+);
+
+document.addEventListener(
+  "click",
+  event => {
+
+    if (
+      !event.target.closest(
+        ".search"
+      )
+    ) {
+
+      searchResults.classList.remove(
+        "visible"
+      );
+    }
+
+  }
+);
+
+/* ============================================================
+   POPULAR PLACES
+   ============================================================ */
+
+document
+  .querySelectorAll(
+    "[data-place]"
+  )
+  .forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        async () => {
+
+          const query =
+            button.dataset.place;
+
+          searchInput.value =
+            query;
+
+          await performSearch();
+
+        }
+      );
+
+    }
+  );
+
+/* ============================================================
+   PLACE CARD
+   ============================================================ */
+
+placeClose.addEventListener(
+  "click",
+  () => {
+
+    placeCard.classList.remove(
+      "visible"
+    );
+
+  }
+);
+
+placeZoom.addEventListener(
+  "click",
+  () => {
+
+    if (
+      !selectedPlace
+    ) {
+      return;
+    }
+
+    map.flyTo(
+      [
+        selectedPlace.lat,
+        selectedPlace.lng
+      ],
+      18,
+      {
+        duration:
+          1.3
+      }
+    );
+
+  }
+);
+
+placeWalk.addEventListener(
+  "click",
+  () => {
+
+    startWalkMode();
+
+  }
+);
+
+/* ============================================================
+   WALK MODE
+   ============================================================ */
+
+let walkMode =
+  false;
+
+function startWalkMode() {
+
+  if (
+    !selectedPlace
+  ) {
+
+    alert(
+      "Сначала найди место через поиск."
+    );
+
+    searchInput.focus();
+
+    return;
+  }
+
+  walkMode =
+    true;
+
+  walkOverlay.classList.add(
+    "visible"
+  );
+
+  walkBanner.classList.add(
+    "visible"
+  );
+
+  map.getContainer().style.cursor =
+    "crosshair";
+
+  map.flyTo(
+    [
+      selectedPlace.lat,
+      selectedPlace.lng
+    ],
+    Math.max(
+      selectedPlace.zoom || 16,
+      17
+    ),
+    {
+      duration:
+        1.4
+    }
+  );
+
+  /*
+   * При режиме прогулки можно кликать
+   * по карте, чтобы "перемещать" человека.
+   */
+
+  setTimeout(
+    () => {
+
+      if (
+        selectedMarker
+      ) {
+        selectedMarker.openPopup();
+      }
+
+    },
+    1000
+  );
+}
+
+function stopWalkMode() {
+
+  walkMode =
+    false;
+
+  walkOverlay.classList.remove(
+    "visible"
+  );
+
+  walkBanner.classList.remove(
+    "visible"
+  );
+
+  map.getContainer().style.cursor =
+    "";
+
+}
+
+walkButton.addEventListener(
+  "click",
+  () => {
+
+    if (
+      walkMode
+    ) {
+
+      stopWalkMode();
+
+      return;
+    }
+
+    startWalkMode();
+
+  }
+);
+
+exitWalk.addEventListener(
+  "click",
+  stopWalkMode
+);
+
+window.nexaStartWalk =
+  startWalkMode;
+
+/* ============================================================
+   WALK MODE MAP CLICK
+   ============================================================ */
+
+map.on(
+  "click",
+  event => {
+
+    if (
+      !walkMode
+    ) {
+      return;
+    }
+
+    const nextPlace = {
+
+      lat:
+        event.latlng.lat,
+
+      lng:
+        event.latlng.lng,
+
+      zoom:
+        Math.max(
+          map.getZoom(),
+          17
+        ),
+
+      name:
+        "Точка прогулки",
+
+      address:
+        formatCoordinates(
+          event.latlng.lat,
+          event.latlng.lng
+        )
+    };
+
+    openPlace(
+      nextPlace
+    );
+
+  }
+);
+
+/* ============================================================
+   COORDINATES
+   ============================================================ */
+
+map.on(
+  "mousemove",
+  event => {
+
+    coordinates.textContent =
+      `Координаты: ${
+        event.latlng.lat.toFixed(5)
+      }, ${
+        event.latlng.lng.toFixed(5)
+      }`;
+
+  }
+);
+
+map.on(
+  "mouseout",
+  () => {
+
+    coordinates.textContent =
+      "Координаты: —, —";
+
+  }
+);
+
+/* ============================================================
+   LOCATION
+   ============================================================ */
+
+locationButton.addEventListener(
+  "click",
+  () => {
+
+    if (
+      !navigator.geolocation
+    ) {
+
+      alert(
+        "Этот браузер не поддерживает геолокацию."
+      );
+
+      return;
+    }
+
+    locationButton.textContent =
+      "…";
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+
+        const lat =
+          position.coords.latitude;
+
+        const lng =
+          position.coords.longitude;
+
+        if (
+          currentLocationMarker
+        ) {
+
+          map.removeLayer(
+            currentLocationMarker
+          );
+
+        }
+
+        currentLocationMarker =
+          L.circleMarker(
+            [
+              lat,
+              lng
+            ],
+            {
+              radius: 9,
+
+              color:
+                "#ffffff",
+
+              weight: 4,
+
+              fillColor:
+                "#2563eb",
+
+              fillOpacity:
+                1
+            }
+          ).addTo(
+            map
+          );
+
+        currentLocationMarker.bindPopup(
+          `
+            <div class="popup">
+
+              <h3>
+                Ваше положение
+              </h3>
+
+              <p>
+                📍
+                ${formatCoordinates(
+                  lat,
+                  lng
+                )}
+              </p>
+
+            </div>
+          `
+        );
+
+        map.flyTo(
+          [
+            lat,
+            lng
+          ],
+          16,
+          {
+            duration:
+              1.5
+          }
+        );
+
+        setTimeout(
+          () => {
+
+            currentLocationMarker.openPopup();
+
+          },
+          800
+        );
+
+        locationButton.textContent =
+          "◎";
+
+      },
+
+      error => {
+
+        locationButton.textContent =
+          "◎";
+
+        const messages = {
+
+          1:
+            "Доступ к геолокации запрещён.",
+
+          2:
+            "Не удалось определить местоположение.",
+
+          3:
+            "Истекло время ожидания."
+        };
+
+        alert(
+          messages[
+            error.code
+          ] ||
+          "Не удалось получить местоположение."
+        );
+
+      },
+
+      {
+        enableHighAccuracy:
+          true,
+
+        timeout:
+          10000,
+
+        maximumAge:
+          30000
+      }
+    );
+
+  }
+);
+
+/* ============================================================
+   LAYERS
+   ============================================================ */
+
+const standardCheckbox =
+  document.getElementById(
+    "standardLayer"
+  );
+
+const satelliteCheckbox =
+  document.getElementById(
+    "satelliteLayer"
+  );
+
+const terrainCheckbox =
+  document.getElementById(
+    "terrainLayer"
+  );
+
+function updateLayers() {
+
+  if (
+    standardCheckbox.checked
+  ) {
+
+    map.addLayer(
+      standardLayer
+    );
+
+  } else {
+
+    map.removeLayer(
+      standardLayer
+    );
+
+  }
+
+  if (
+    satelliteCheckbox.checked
+  ) {
+
+    map.addLayer(
+      satelliteLayer
+    );
+
+  } else {
+
+    map.removeLayer(
+      satelliteLayer
+    );
+
+  }
+
+  if (
+    terrainCheckbox.checked
+  ) {
+
+    map.addLayer(
+      terrainLayer
+    );
+
+  } else {
+
+    map.removeLayer(
+      terrainLayer
+    );
+
+  }
+
+}
+
+function ensureOneLayer() {
+
+  if (
+    !standardCheckbox.checked &&
+    !satelliteCheckbox.checked &&
+    !terrainCheckbox.checked
+  ) {
+
+    standardCheckbox.checked =
+      true;
+
+  }
+
+}
+
+[
+  standardCheckbox,
+  satelliteCheckbox,
+  terrainCheckbox
+].forEach(
+  checkbox => {
+
+    checkbox.addEventListener(
+      "change",
+      () => {
+
+        ensureOneLayer();
+
+        updateLayers();
+
+      }
+    );
+
+  }
+);
+
+/* ============================================================
+   KEYBOARD
+   ============================================================ */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.target.tagName ===
+      "INPUT"
+    ) {
+      return;
+    }
+
+    if (
+      event.key === "/"
+    ) {
+
+      event.preventDefault();
+
+      searchInput.focus();
+
+    }
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      searchResults.classList.remove(
+        "visible"
+      );
+
+      placeCard.classList.remove(
+        "visible"
+      );
+
+      if (
+        walkMode
+      ) {
+
+        stopWalkMode();
+
+      }
+
+    }
+
+  }
+);
+
+/* ============================================================
+   MAP READY
+   ============================================================ */
+
+map.whenReady(
+  () => {
+
+    console.log(
+      "NexaMap initialized."
+    );
+
+    console.log(
+      "Real-world search enabled."
+    );
+
+  }
+);
+
+/* ============================================================
+   RESIZE
+   ============================================================ */
+
+let resizeTimer =
+  null;
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    clearTimeout(
+      resizeTimer
+    );
+
+    resizeTimer =
+      setTimeout(
+        () => {
+
+          map.invalidateSize();
+
+        },
+        150
+      );
+
+  }
+);
+
+/* ============================================================
+   UI EVENT ISOLATION
+   ============================================================ */
+
+[
+  ".topbar",
+  ".side-panel",
+  ".place-card",
+  ".location-button",
+  ".walk-button",
+  ".coordinates",
+  ".status",
+  ".walk-banner"
+].forEach(
+  selector => {
+
+    document
+      .querySelectorAll(
+        selector
+      )
+      .forEach(
+        element => {
+
+          L.DomEvent
+            .disableClickPropagation(
+              element
+            );
+
+          L.DomEvent
+            .disableScrollPropagation(
+              element
+            );
+
+        }
+      );
+
+  }
+);
+</script>
+
+</body>
+</html>
